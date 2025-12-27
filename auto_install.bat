@@ -134,7 +134,7 @@ if %errorlevel% neq 0 (
 )
 
 echo installed > "venv\browser_installed.marker"
-echo    %GREEN%✔ Tải trình duyệt thành công!%RESET%
+echo    %GREEN% Tải trình duyệt thành công!%RESET%
 
 :RUN_TOOL
 echo.
@@ -144,6 +144,7 @@ echo  %CYAN%╚═════════════════════�
 echo.
 :: Chạy file main
 python main.py
+explorer .
 goto :END
 
 :ERROR_NETWORK
@@ -164,4 +165,5 @@ exit
 
 :END
 echo  %CYAN%Cảm ơn bạn đã sử dụng! Nhập phím bất kỳ để thoát%RESET%
+
 pause >nul
