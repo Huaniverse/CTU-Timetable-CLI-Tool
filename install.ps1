@@ -106,7 +106,8 @@ if (Test-Path $BatFile) {
     Write-Host "-> Da tim thay file. Dang chay..." -ForegroundColor Green
     
     # Chay file bat
-    Start-Process -FilePath $BatFile -Wait
+    Start-Process cmd.exe -ArgumentList "/c $BatFile" -NoNewWindow -Wait
+
 } else {
     # Fallback: Tim de quy neu co su co
     $FoundBat = Get-ChildItem -Path $InstallDir -Filter "auto_run.bat" -Recurse | Select-Object -First 1
