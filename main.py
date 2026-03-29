@@ -104,6 +104,61 @@ def minimize_browser_window():
 # PHẦN 4: CHƯƠNG TRÌNH CHÍNH (MAIN EXECUTION)
 # ==============================================================================
 
+def react_fill(page, selector: str, value: str, char_delay: float = 0.02):
+    """
+    Gõ từng ký tự vào input của React controlled component.
+    Dùng native setter để bypass React's synthetic event system,
+    đảm bảo dropdown nhận biết được giá trị đang nhập.
+    """
+    page.evaluate(f"""
+        (function() {{
+            const inp = document.querySelector('{selector}');
+            if (!inp) return;
+            const nativeSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype, 'value'
+            ).set;
+            inp.focus();
+            nativeSetter.call(inp, '');
+            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        }})();
+    """)
+    page.wait_for_timeout(50)
+    for ch in value:
+        page.evaluate(f"""
+            (function() {{
+                const inp = document.querySelector('{selector}');
+                if (!inp) return;
+                const nativeSetter = Object.getOwnPropertyDescriptor(
+                    window.HTMLInputElement.prototype, 'value'
+                ).set;
+                nativeSetter.call(inp, inp.value + '{ch}');
+                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }})();
+        """)
+        page.wait_for_timeout(int(char_delay * 1000))
+
+
+def react_press_key(page, selector: str, key: str):
+    """
+    Dispatch đầy đủ keydown + keypress + keyup cho React component.
+    Cần thiết vì Ant Design lắng nghe cả 3 event và cần keyCode.
+    """
+    key_code = 13 if key == 'Enter' else 9 if key == 'Tab' else 0
+    for event_type in ['keydown', 'keypress', 'keyup']:
+        page.evaluate(f"""
+            (function() {{
+                const el = document.querySelector('{selector}');
+                if (!el) return;
+                el.dispatchEvent(new KeyboardEvent('{event_type}', {{
+                    bubbles: true, cancelable: true,
+                    key: '{key}', code: '{key}',
+                    keyCode: {key_code}, which: {key_code}
+                }}));
+            }})();
+        """)
+        page.wait_for_timeout(30)
+
+
 def run(playwright):
     # Xóa màn hình console khi bắt đầu
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -249,20 +304,24 @@ def run(playwright):
         all_data["semester"] = semester
 
         # Điền Năm học & Học kỳ vào dropdown filter
-        page.fill("#rc_select_0", academic_year)
-        page.keyboard.press("Tab")
-        page.keyboard.type(semester)
+        react_fill(page, "#rc_select_0", academic_year)
+        react_press_key(page, "#rc_select_0", "Enter")
+        page.wait_for_timeout(150)
+        react_press_key(page, "#rc_select_0", "Tab")
+        page.wait_for_timeout(150)
+
+        react_fill(page, "#rc_select_1", semester)
+        react_press_key(page, "#rc_select_1", "Enter")
+        page.wait_for_timeout(150)
+        react_press_key(page, "#rc_select_1", "Tab")
+        page.wait_for_timeout(150)
 
         # Loop qua từng mã học phần để lấy dữ liệu
         for course_code in course_codes:
             print(Fore.YELLOW + f" Đang lấy dữ liệu học phần {course_code}..." + " "*20,end = "\r")
 
             # Xóa input cũ và điền mã mới
-            page.click("#rc_select_2") 
-            page.keyboard.press("Control+A")
-            page.keyboard.press("Backspace")
-            
-            page.fill("#rc_select_2", course_code)
+            react_fill(page, "#rc_select_2", course_code)
             page.click("span[aria-label='search']")
             page.wait_for_timeout(1500) # Đợi API load dữ liệu
 
