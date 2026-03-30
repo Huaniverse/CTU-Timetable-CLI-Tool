@@ -75,8 +75,8 @@ def validate_semester(sem: str) -> bool:
     return sem in ["1", "2", "3"]
 
 def validate_course_code(code: str) -> bool:
-    """Kiểm tra định dạng mã học phần (VD: CT123, ML001)."""
-    return bool(re.match(r"^[A-Z]{2}\d{3}E?$", code))
+    """Kiểm tra định dạng mã học phần (VD: CT123, ML001, CT123H, CT123HET)."""
+    return bool(re.match(r"^[A-Z]{2}\d{3}[A-Z]*$", code))
 
 # ==============================================================================
 # PHẦN 3: QUẢN LÝ CỬA SỔ TRÌNH DUYỆT
